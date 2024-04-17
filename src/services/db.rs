@@ -9,7 +9,7 @@ pub struct Database {
 
 impl Database {
     pub async fn init() -> Result<Self> {
-        let url = "mongodb://127.0.0.1:27017".to_string();
+        let url = "mongodb+srv://zhongxi1992:1FIZfgsoYDkS0Bg3@cluster0.x56nkq9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0".to_string();
         
       let client =   Client::with_uri_str(url.clone()).await?;
            
