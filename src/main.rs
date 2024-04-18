@@ -2,6 +2,7 @@ mod model;
 mod services;
 mod routes;
 mod utils;
+
 use env_logger::Env;
 use actix_web::{get, middleware::Logger, web::Data, App, HttpResponse, HttpServer, Responder};
 use routes::signature::get_signature;
