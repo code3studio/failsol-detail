@@ -55,6 +55,6 @@ pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,l
     draw_text_mut(&mut img, RED, failed_detail_x, failed_detail_y, error_scale1, &font_italic, "Program Error:");
     draw_text_mut(&mut img, RED, error_x, failed_detail_y+1, error_scale2, &font_italic, "\"Instruction #3 Failed - ");
     draw_text_mut(&mut img, RED, error_x1, failed_detail_y+1, error_scale2, &font_italic, &error_message);
-    img.save(&format!("./output/{}.png",text))?;
+    img.save("./output/result.png")?;
     Ok(())
 }

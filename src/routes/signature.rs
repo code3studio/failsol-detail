@@ -1,10 +1,12 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, path::{Path, PathBuf}, str::FromStr};
 
+use actix_files::NamedFile;
 use actix_web::{
     get,
-    web::{self, Data},
-    HttpResponse,
+    web::{self, Bytes, Data, Payload, Query},
+    HttpResponse, Result,
 };
+use futures_util::StreamExt;
 use mongodb::bson::doc;
 use serde::Serialize;
 use solana_client::{
@@ -15,9 +17,7 @@ use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature};
 use solana_transaction_status::{EncodedTransaction, UiMessage, UiTransactionEncoding};
 
 use crate::{
-    model::signature_model::Transaction,
-    services::db::Database,
-    utils::generate_image::generate::{self, generate},
+    model::signature_model::ImageQuery, services::db::Database, utils::generate_image::generate::{self, generate}
 };
 
 #[get("/signature")]
@@ -33,14 +33,7 @@ pub async fn get_signature(db: Data<Database>) -> HttpResponse {
         .ok()
         .expect("get error")
     {
-        // let client = RpcClient::new("https://api.mainnet-beta.solana.com");
-        // let signature = Signature::from_str(&result._id).unwrap();
-        // match client.get_transaction(&signature, UiTransactionEncoding::Json) {
-        //     Ok(transaction) => println!("{:#?}", transaction),
-        // Err(e) => eprintln!("Error fetching transaction: {}", e),
-        // }
-
-        //  HttpResponse::Ok().json(result)
+        
         let fetched_transaction = web::block(move || {
             let client = RpcClient::new("https://api.mainnet-beta.solana.com");
             let signature = Signature::from_str(&result._id.clone()).unwrap();
@@ -94,4 +87,13 @@ pub async fn get_signature(db: Data<Database>) -> HttpResponse {
     } else {
         HttpResponse::InternalServerError().body("getError".to_string())
     }
+}
+
+#[get("/image")]
+pub async fn get_image( db:Data<Database>)->Result<NamedFile> {
+    // let file_name = format!(".output/result.png",query.name );
+    let path = PathBuf::from("./output/result.png");
+
+
+    Ok(NamedFile::open(path)?)
 }

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 ab_glyph = "0.2.25"
+actix-files = "0.6.5"
 actix-web = "4"
 chrono = "0.4.37"
 env_logger = "0.11.3"
