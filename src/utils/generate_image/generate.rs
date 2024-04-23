@@ -5,7 +5,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use image::{io::Reader, ImageError, Rgba};
 use imageproc::drawing::draw_text_mut;
 
-use crate::utils::{constants::{BLUE, GREEN, RED, WHITE}, generate_image::process_log_message::process_log_message};
+use crate::utils::{constants::{BLUE, GREEN, RED, WHITE}, generate_image::{process_log_message::process_log_message, upload_pinata::{self, upload_pinata}}};
 
 pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,log_messages:Vec<String>) ->Result<(),ImageError>  {
     let error_message = process_log_message(log_messages);
@@ -56,5 +56,6 @@ pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,l
     draw_text_mut(&mut img, RED, error_x, failed_detail_y+1, error_scale2, &font_italic, "\"Instruction #3 Failed - ");
     draw_text_mut(&mut img, RED, error_x1, failed_detail_y+1, error_scale2, &font_italic, &error_message);
     img.save("./output/result.png")?;
+  
     Ok(())
 }

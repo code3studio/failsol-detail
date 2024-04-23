@@ -17,11 +17,12 @@ use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature};
 use solana_transaction_status::{EncodedTransaction, UiMessage, UiTransactionEncoding};
 
 use crate::{
-    model::signature_model::ImageQuery, services::db::Database, utils::generate_image::generate::{self, generate}
+    model::signature_model::ImageQuery, services::db::Database, utils::generate_image::{generate::{self, generate}, upload_pinata::upload_pinata}
 };
 
 #[get("/signature")]
 pub async fn get_signature(db: Data<Database>) -> HttpResponse {
+    upload_pinata().await;
     if let Some(result) = db
         .signature
         .find_one_and_update(

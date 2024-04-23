@@ -10,7 +10,9 @@ use services::db::Database;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    
     // match Database::check_connection().await {
     //     Ok(()) => println!("Connection to MongoDB established successfully"),
     //     Err(err) => {
