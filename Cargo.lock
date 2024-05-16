@@ -46,6 +46,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-cors"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9e772b3bcafe335042b5db010ab7c09013dad6eac4915c91d8d50902769f331"
+dependencies = [
+ "actix-utils",
+ "actix-web",
+ "derive_more",
+ "futures-util",
+ "log",
+ "once_cell",
+ "smallvec",
+]
+
+[[package]]
 name = "actix-files"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1881,6 +1896,7 @@ name = "failsol-detail"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
+ "actix-cors",
  "actix-files",
  "actix-web",
  "chrono",
@@ -1892,6 +1908,7 @@ dependencies = [
  "mongodb",
  "pinata-sdk",
  "serde",
+ "serde_json",
  "solana-client",
  "solana-sdk",
  "solana-transaction-status",

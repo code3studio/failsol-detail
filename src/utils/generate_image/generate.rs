@@ -1,13 +1,13 @@
 use std::path::Path;
 
-use ab_glyph::{Font, FontRef, PxScale};
-use chrono::{DateTime, TimeZone, Utc};
-use image::{io::Reader, ImageError, Rgba};
+use ab_glyph::{FontRef, PxScale};
+use chrono::DateTime;
+use image::{io::Reader, ImageError};
 use imageproc::drawing::draw_text_mut;
 
-use crate::utils::{constants::{BLUE, GREEN, RED, WHITE}, generate_image::{process_log_message::process_log_message, upload_pinata::{self, upload_pinata}}};
+use crate::utils::{constants::{BLUE, GREEN, RED, WHITE}, generate_image::{process_log_message::process_log_message, upload_pinata::upload_pinata}};
 
-pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,log_messages:Vec<String>) ->Result<(),ImageError>  {
+ pub async fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,log_messages:Vec<String>) ->Result<String,ImageError>  {
     let error_message = process_log_message(log_messages);
     let  template_path = Path::new("./src/assets/template.png");
     
@@ -36,7 +36,7 @@ pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,l
     let font_data_italic = include_bytes!("../../assets/font/Roboto-MediumItalic.ttf");
     let font = FontRef::try_from_slice(font_data).unwrap();
     let font_italic = FontRef::try_from_slice(font_data_italic).unwrap();
-    let (text,text1) = text.split_at(50);
+    let (text1,text2) = text.split_at(50);
     let block = format!("#{}",block);
    let timestamp = block_time.unwrap_or(1711111111);
    println!("time={}",timestamp);
@@ -44,8 +44,8 @@ pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,l
 
    //TODO: sol price
     // let text = "5eSnHUs85yUgUuXvGpr2QEBjKAg39eyeY5XUFNwXhk51Sez2nt9LZ"; let text1 ="ZfJ1sCetytPBeumQs2TU9Aps9XBWvBJLUUT";
-    draw_text_mut(&mut img, WHITE, signature_x, signature_y, scale, &font, text);
-    draw_text_mut(&mut img, WHITE, signature_x, signature_y1, scale, &font, text1);
+    draw_text_mut(&mut img, WHITE, signature_x, signature_y, scale, &font, text1);
+    draw_text_mut(&mut img, WHITE, signature_x, signature_y1, scale, &font, text2);
     draw_text_mut(&mut img, BLUE, signature_x, block_y, scale, &font, &block);
     draw_text_mut(&mut img, WHITE, time_x, time_y, scale, &font,&datetime );
     draw_text_mut(&mut img, BLUE, signature_x, signer_y, scale, &font,signer );
@@ -56,6 +56,12 @@ pub fn generate(text:&str,block:u64,block_time:Option<i64>,signer:&str,fee:u64,l
     draw_text_mut(&mut img, RED, error_x, failed_detail_y+1, error_scale2, &font_italic, "\"Instruction #3 Failed - ");
     draw_text_mut(&mut img, RED, error_x1, failed_detail_y+1, error_scale2, &font_italic, &error_message);
     img.save("./output/result.png")?;
+
+    let hash = match upload_pinata(text.to_owned(),block.clone(),fee as f64/1_000_000_000.00).await {
+        Ok(result) => result,
+        Err(e) => e
+    };
+    
   
-    Ok(())
+    Ok(hash)
 }
