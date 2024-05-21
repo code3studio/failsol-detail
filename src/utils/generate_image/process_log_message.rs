@@ -1,11 +1,12 @@
 pub fn process_log_message(messages: Vec<String>) -> String {
+    // println!("messages={:?}",messages);
     let message = match messages
         .into_iter()
-        .filter(|entry| entry.contains("Program log:"))
+        .filter(|entry| { entry.contains("Program log:")})
         .collect::<Vec<String>>()
         .last()
     {
-        Some(message) => format!("{}\"",extract_error_message(message)),
+        Some(message) => format!("{}\"", extract_error_message(message)),
         None => "null\"".to_string(),
     };
 

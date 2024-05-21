@@ -15,7 +15,7 @@ struct Attributes {
     attributes: Vec<Attribute>,
 }
 
-pub async fn upload_pinata(transaction:String,block:String,fee:f64) ->Result<String,String> {
+pub async fn upload_pinata(transaction: String, block: String, fee: f64,number:u64) -> Result<String, String> {
     let pinata_api_key = env::var("PINATA_API_KEY").unwrap();
     let pinata_secret_key = env::var("PINATA_API_SECRET_KEY").unwrap();
     let nft_name = env::var("NFT_NAME").unwrap_or("FailSol".to_string());
@@ -37,14 +37,14 @@ pub async fn upload_pinata(transaction:String,block:String,fee:f64) ->Result<Str
         // }
         // "#;
         // let parsed_attributes: Value = serde_json::from_str(data).unwrap();
-   
+
         // json_data.insert("name", nft_name);
         // json_data.insert("description", description);
         // json_data.insert("image", format!("https://white-giant-bird-563.mypinata.cloud/ipfs/{}",hash));
         // json_data.insert("attributes", data.to_string());
 
         let json = json!({
-            "name":nft_name,
+            "name":format!("{}#{}",nft_name,number),
             "description": description,
             "image": format!("https://white-giant-bird-563.mypinata.cloud/ipfs/{}",hash),
             "attributes" : [
@@ -64,11 +64,9 @@ pub async fn upload_pinata(transaction:String,block:String,fee:f64) ->Result<Str
         let result = api.pin_json(PinByJson::new(json)).await;
 
         if let Ok(pinned_object) = result {
-        let hash = pinned_object.ipfs_hash;
-        return Ok(hash);
+            let hash = pinned_object.ipfs_hash;
+            return Ok(hash);
         }
-        
-      }
-      Err("upload failed".to_string())
-      
+    }
+    Err("upload failed".to_string())
 }

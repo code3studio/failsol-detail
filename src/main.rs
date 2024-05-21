@@ -2,12 +2,12 @@ use actix_cors::Cors;
 use actix_web::{http, middleware::Logger, web::Data, App, HttpServer};
 use env_logger::Env;
 
+mod model;
 mod routes;
 mod services;
-mod model;
 
 mod utils;
-use routes::signature::{get_signatures_handler, get_image};
+use routes::signature::{get_image, get_signatures_handler,get_specific_signature};
 use services::db::Database;
 
 #[actix_web::main]
@@ -21,18 +21,15 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         // Create CORS middleware configuration
         let cors = Cors::default()
-            .allowed_origin("http://localhost:5174")  // Specify the allowed origin
-            .allowed_methods(vec!["GET", "POST"])  // Specify the allowed methods
-            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-            .allowed_header(http::header::CONTENT_TYPE)
-            .max_age(3600);  // Optional: specify max age for preflight requests
-
+        .allow_any_origin()
+        .allow_any_header()
+        .allow_any_method();
         App::new()
             .wrap(Logger::default())
-            .wrap(cors)  // Apply CORS middleware globally
+            .wrap(cors) // Apply CORS middleware globally
             .app_data(db_data.clone())
             .service(get_signatures_handler)
-            .service(get_image)
+            .service(get_image).service(get_specific_signature)
     })
     .bind(("0.0.0.0", 5001))?;
 
