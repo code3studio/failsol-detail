@@ -39,8 +39,9 @@ pub struct ImageQuery {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ResponseModel {
-    pub transaction: EncodedConfirmedTransactionWithStatusMeta,
+    // pub transaction: EncodedConfirmedTransactionWithStatusMeta,
     pub hash: String,
+    pub number:u64
 }
 
 

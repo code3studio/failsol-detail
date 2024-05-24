@@ -19,7 +19,7 @@ pub async fn generate(
     signer: &str,
     fee: u64,
     log_messages: Vec<String>,
-) -> Result<String, ImageError> {
+) -> Result<(String,u64), ImageError> {
     let number = db.histories.count_documents(None, None).await.unwrap();
     //TODO: number
     let error_message = process_log_message(log_messages);
@@ -154,5 +154,5 @@ pub async fn generate(
         Err(e) => e,
     };
 
-    Ok(hash)
+    Ok((hash,number))
 }

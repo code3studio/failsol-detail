@@ -70,7 +70,7 @@ async fn get_signatures_handler(db: web::Data<Database>, path: Path<usize>) -> H
                                         solana_transaction_status::option_serializer::OptionSerializer::Some(e) => {e},
                                         solana_transaction_status::option_serializer::OptionSerializer::None => todo!(),
                                         solana_transaction_status::option_serializer::OptionSerializer::Skip => todo!(), };
-                            let hash = generate(
+                            let (hash,number) = generate(
                                 db.clone(),
                                 &signature,
                                 t.slot,
@@ -82,8 +82,9 @@ async fn get_signatures_handler(db: web::Data<Database>, path: Path<usize>) -> H
                             .await
                             .unwrap();
                             let response = ResponseModel {
-                                transaction: t,
+                                // transaction: t,
                                 hash,
+                                number
                             };
                             responses.push(response);
                         }
@@ -298,7 +299,7 @@ pub async fn get_specific_signature(db: web::Data<Database>, path: Path<String>)
                                            solana_transaction_status::option_serializer::OptionSerializer::Some(e) => {e},
                                            solana_transaction_status::option_serializer::OptionSerializer::None => todo!(),
                                            solana_transaction_status::option_serializer::OptionSerializer::Skip => todo!(), };
-                                                        let hash = generate(
+                                                        let (hash,number) = generate(
                                                             db.clone(),
                                                             &signature,
                                                             t.slot,
@@ -310,8 +311,9 @@ pub async fn get_specific_signature(db: web::Data<Database>, path: Path<String>)
                                                         .await
                                                         .unwrap();
                                                         let response = ResponseModel {
-                                                            transaction: t,
+                                                            // transaction: t,
                                                             hash,
+                                                            number
                                                         };
                                                         responses.push(response);
                                                         HttpResponse::Ok().json(responses)
