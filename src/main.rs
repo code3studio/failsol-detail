@@ -1,5 +1,6 @@
+use actix::Actor;
 use actix_cors::Cors;
-use actix_web::{http, middleware::Logger, web::Data, App, HttpServer};
+use actix_web::{http, middleware::Logger, web::{self, Data}, App, HttpServer};
 use env_logger::Env;
 
 mod model;
@@ -10,6 +11,8 @@ mod utils;
 use routes::signature::{get_image, get_signatures_handler,get_specific_signature};
 use services::db::Database;
 
+use crate::{routes::{update::{get_histories, update_img_url}, ws::get_ws}, services::ws::lobby::WsServer};
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
@@ -17,6 +20,7 @@ async fn main() -> std::io::Result<()> {
 
     let db = Database::init().await.unwrap();
     let db_data = Data::new(db);
+    let ws_server = WsServer::new().start();
 
     let server = HttpServer::new(move || {
         // Create CORS middleware configuration
@@ -28,8 +32,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(cors) // Apply CORS middleware globally
             .app_data(db_data.clone())
+            .app_data(web::Data::new(ws_server.clone()))
             .service(get_signatures_handler)
-            .service(get_image).service(get_specific_signature)
+            .service(get_image).service(get_specific_signature).service(update_img_url).service(get_ws).service(get_histories)
     })
     .bind(("0.0.0.0", 5001))?;
 

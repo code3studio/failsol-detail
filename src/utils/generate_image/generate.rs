@@ -2,7 +2,7 @@ use std::path::Path;
 
 use ab_glyph::{FontRef, PxScale};
 use actix_web::web;
-use chrono::DateTime;
+use chrono::{DateTime};
 use image::{io::Reader, ImageError};
 use imageproc::drawing::draw_text_mut;
 
@@ -19,9 +19,9 @@ pub async fn generate(
     signer: &str,
     fee: u64,
     log_messages: Vec<String>,
-) -> Result<(String,u64), ImageError> {
-    let number = db.histories.count_documents(None, None).await.unwrap();
-    //TODO: number
+) -> Result<(String, u64), Box<dyn std::error::Error>> {
+    let number = db.histories.count_documents(None, None).await?;
+
     let error_message = process_log_message(log_messages);
     let template_path = Path::new("./src/assets/template.png");
 
@@ -47,112 +47,43 @@ pub async fn generate(
     let error_x = 186;
     let error_x1 = 332;
     let number_x = 256;
-    let number_y=520;
+    let number_y = 520;
 
     let font_data = include_bytes!("../../assets/font/Roboto-Medium.ttf");
     let font_data_italic = include_bytes!("../../assets/font/Roboto-MediumItalic.ttf");
-    let font = FontRef::try_from_slice(font_data).unwrap();
-    let font_italic = FontRef::try_from_slice(font_data_italic).unwrap();
+    let font = FontRef::try_from_slice(font_data)?;
+    let font_italic = FontRef::try_from_slice(font_data_italic)?;
     let (text1, text2) = text.split_at(50);
     let block = format!("#{}", block);
     let timestamp = block_time.unwrap_or(1711111111);
     println!("time={}", timestamp);
     let datetime = DateTime::from_timestamp(timestamp, 0)
-        .unwrap()
-        .format("%B %d, %Y %H:%M:%S +%Z")
-        .to_string();
+    .unwrap()
+    .format("%B %d, %Y %H:%M:%S +%Z")
+    .to_string();
 
-    //TODO: sol price
-    // let text = "5eSnHUs85yUgUuXvGpr2QEBjKAg39eyeY5XUFNwXhk51Sez2nt9LZ"; let text1 ="ZfJ1sCetytPBeumQs2TU9Aps9XBWvBJLUUT";
-    draw_text_mut(
-        &mut img,
-        WHITE,
-        signature_x,
-        signature_y,
-        scale,
-        &font,
-        text1,
-    );
-    draw_text_mut(
-        &mut img,
-        WHITE,
-        number_x,
-        number_y,
-        scale_number,
-        &font,
-        &format!("#{}",number.to_string()),
-    );
-    draw_text_mut(
-        &mut img,
-        WHITE,
-        signature_x,
-        signature_y1,
-        scale,
-        &font,
-        text2,
-    );
+    draw_text_mut(&mut img, WHITE, signature_x, signature_y, scale, &font, text1);
+    draw_text_mut(&mut img, WHITE, number_x, number_y, scale_number, &font, &format!("#{}", number));
+    draw_text_mut(&mut img, WHITE, signature_x, signature_y1, scale, &font, text2);
     draw_text_mut(&mut img, BLUE, signature_x, block_y, scale, &font, &block);
     draw_text_mut(&mut img, WHITE, time_x, time_y, scale, &font, &datetime);
     draw_text_mut(&mut img, BLUE, signature_x, signer_y, scale, &font, signer);
     draw_text_mut(&mut img, RED, fail_x, fail_y, scale, &font, "Fail");
-    draw_text_mut(
-        &mut img,
-        GREEN,
-        finalized_x,
-        fail_y,
-        scale,
-        &font,
-        "Finalized (MAX Confirmations)",
-    );
-    draw_text_mut(
-        &mut img,
-        WHITE,
-        signature_x,
-        fee_y,
-        scale,
-        &font,
-        &format!("{} SOL", fee as f64 / 1_000_000_000.00),
-    );
-    draw_text_mut(
-        &mut img,
-        RED,
-        failed_detail_x,
-        failed_detail_y,
-        error_scale1,
-        &font_italic,
-        "Program Error:",
-    );
-    draw_text_mut(
-        &mut img,
-        RED,
-        error_x,
-        failed_detail_y + 1,
-        error_scale2,
-        &font_italic,
-        "\"Instruction #3 Failed - ",
-    );
-    draw_text_mut(
-        &mut img,
-        RED,
-        error_x1,
-        failed_detail_y + 1,
-        error_scale2,
-        &font_italic,
-        &error_message,
-    );
+    draw_text_mut(&mut img, GREEN, finalized_x, fail_y, scale, &font, "Finalized (MAX Confirmations)");
+    draw_text_mut(&mut img, WHITE, signature_x, fee_y, scale, &font, &format!("{} SOL", fee as f64 / 1_000_000_000.00));
+    draw_text_mut(&mut img, RED, failed_detail_x, failed_detail_y, error_scale1, &font_italic, "Program Error:");
+    draw_text_mut(&mut img, RED, error_x, failed_detail_y + 1, error_scale2, &font_italic, "\"Instruction #3 Failed - ");
+    draw_text_mut(&mut img, RED, error_x1, failed_detail_y + 1, error_scale2, &font_italic, &error_message);
+    
     img.save("./output/result.png")?;
 
-    let hash = match upload_pinata(
+    let hash = upload_pinata(
         text.to_owned(),
         block.clone(),
         fee as f64 / 1_000_000_000.00,
-        number
+        number,
     )
-    .await
-    {
-        Ok(result) => result,
-        Err(e) => e,
-    };
+    .await?;
 
-    Ok((hash,number))
+    Ok((hash, number))
 }

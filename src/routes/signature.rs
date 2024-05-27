@@ -16,22 +16,24 @@ use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature as So
 use solana_transaction_status::{EncodedTransaction, UiMessage, UiTransactionEncoding};
 
 use crate::{
-    model::signature_model::{History, HistoryRequest, ResponseModel},
+    model::signature_model::{CreateRequest, CreateRequestWithAddress, History, HistoryRequest, ResponseModel},
     services::db::Database,
     utils::{generate_image::generate::generate, transaction::fetch_transaction::get_failed_tx},
 };
 
 #[get("/signature/{count}")]
-async fn get_signatures_handler(db: web::Data<Database>, path: Path<usize>) -> HttpResponse {
+async fn get_signatures_handler(db: web::Data<Database>, path: Path<usize>,web::Query(address):web::Query<CreateRequestWithAddress>) -> HttpResponse {
     let count: usize = path.into_inner();
+    let address = address.address.clone();
     let temp_db = db.clone();
     let signatures = get_failed_tx(count).await.unwrap();
     let mut responses = Vec::new();
     for signature in signatures {
+        let payload = CreateRequest{signature,address:address.clone()};
         match temp_db
             .clone()
             .histories
-            .insert_one(History::try_from(signature).unwrap(), None)
+            .insert_one(History::try_from(payload).unwrap(), None)
             .await
             .ok()
         {
@@ -70,32 +72,29 @@ async fn get_signatures_handler(db: web::Data<Database>, path: Path<usize>) -> H
                                         solana_transaction_status::option_serializer::OptionSerializer::Some(e) => {e},
                                         solana_transaction_status::option_serializer::OptionSerializer::None => todo!(),
                                         solana_transaction_status::option_serializer::OptionSerializer::Skip => todo!(), };
-                            let (hash,number) = generate(
-                                db.clone(),
-                                &signature,
-                                t.slot,
-                                t.block_time,
-                                &signer,
-                                fee,
-                                log_messages,
-                            )
-                            .await
-                            .unwrap();
-                            let response = ResponseModel {
-                                // transaction: t,
-                                hash,
-                                number
-                            };
-                            responses.push(response);
+                            match generate(db.clone(), &signature,t.slot,t.block_time, &signer,fee,log_messages,).await {
+                                Ok((hash,number)) => {
+                                    let response = ResponseModel {
+                                        // transaction: t,
+                                        hash,
+                                        number,
+                                        signature
+                                    };
+                                    responses.push(response);
+                                },
+                                Err(e) => {return  HttpResponse::InternalServerError().body(e.to_string());},
+                            }
+                            
+                           
                         }
                         Err(e) => {
                             eprintln!("Error{:?}", e);
-                            HttpResponse::InternalServerError().body(e.to_string());
+                           return  HttpResponse::InternalServerError().body(e.to_string());
                         }
                     },
                     Err(e) => {
                         eprintln!("Error fetching transaction: {:?}", e);
-                        HttpResponse::InternalServerError().body(e.to_string());
+                       return  HttpResponse::InternalServerError().body(e.to_string());
                     }
                 }
             }
@@ -224,8 +223,9 @@ pub async fn get_image(db: Data<Database>) -> Result<NamedFile> {
 // }
 
 #[get("/sp_signature/{tx}")]
-pub async fn get_specific_signature(db: web::Data<Database>, path: Path<String>) -> HttpResponse {
+pub async fn get_specific_signature(db: web::Data<Database>, path: Path<String>,web::Query(address):web::Query<CreateRequestWithAddress>) -> HttpResponse {
     let signature: String = path.into_inner();
+    let address = address.address;
     let temp_db = db.clone();
     match SolSignature::from_str(&signature) {
         Ok(signature) => {
@@ -244,10 +244,11 @@ pub async fn get_specific_signature(db: web::Data<Database>, path: Path<String>)
                                 Ok(_) => HttpResponse::InternalServerError()
                                     .body("The signature is not failed transaction".to_string()),
                                 Err(e) => {
+                                    let payload = CreateRequest { signature,address:address.clone()};
                                     match temp_db
                                         .clone()
                                         .histories
-                                        .insert_one(History::try_from(signature).unwrap(), None)
+                                        .insert_one(History::try_from(payload).unwrap(), None)
                                         .await
                                     {
                                         Ok(_) => {
@@ -299,24 +300,23 @@ pub async fn get_specific_signature(db: web::Data<Database>, path: Path<String>)
                                            solana_transaction_status::option_serializer::OptionSerializer::Some(e) => {e},
                                            solana_transaction_status::option_serializer::OptionSerializer::None => todo!(),
                                            solana_transaction_status::option_serializer::OptionSerializer::Skip => todo!(), };
-                                                        let (hash,number) = generate(
-                                                            db.clone(),
-                                                            &signature,
-                                                            t.slot,
-                                                            t.block_time,
-                                                            &signer,
-                                                            fee,
-                                                            log_messages,
-                                                        )
-                                                        .await
-                                                        .unwrap();
-                                                        let response = ResponseModel {
-                                                            // transaction: t,
-                                                            hash,
-                                                            number
-                                                        };
-                                                        responses.push(response);
-                                                        HttpResponse::Ok().json(responses)
+                                                        match generate(db.clone(), &signature,t.slot,t.block_time, &signer,fee,log_messages,).await {
+                                                            Ok((hash,number)) => {
+
+                                                                let response = ResponseModel {
+                                                                    // transaction: t,
+                                                                    hash,
+                                                                    number,
+                                                                    signature
+                                                                };
+                                                                responses.push(response);
+                                                                HttpResponse::Ok().json(responses)
+                                                            },
+                                                            Err(e) => {
+                                                                HttpResponse::InternalServerError().body(e.to_string())
+                                                            },
+                                                        }
+                                                        
                                                     }
                                                     Err(e) => {
                                                         eprintln!("Error{:?}", e);
